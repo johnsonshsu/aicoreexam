@@ -47,6 +47,10 @@ button:hover {
     background: #217dbb;
 }
 
+#start-btn {
+    margin-left: 20px;
+}
+
 #quiz-section,
 #result-section {
     margin-top: 24px;

@@ -30,7 +30,13 @@ document.getElementById('restart-btn').addEventListener('click', () => {
 });
 
 function startQuiz() {
-    const count = parseInt(document.getElementById('question-count').value, 10);
+    let countValue = document.getElementById('question-count').value;
+    let count;
+    if (countValue === 'all') {
+        count = questions.length;
+    } else {
+        count = parseInt(countValue, 10);
+    }
     if (isNaN(count) || count < 1) return;
     total = Math.min(count, questions.length);
     quizQuestions = shuffle([...questions]).slice(0, total);
