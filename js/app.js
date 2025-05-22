@@ -119,6 +119,7 @@ function submitAnswer(e) {
     const answerZeroBased = q.answer.map(idx => idx - 1);
     const correct = arraysEqual(selected.sort(), answerZeroBased.slice().sort());
     if (correct) {
+        score++;
         feedback.textContent = '✔️ 答對了！';
         feedback.style.color = '#27ae60';
     } else {
