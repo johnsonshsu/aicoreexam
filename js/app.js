@@ -119,7 +119,6 @@ function submitAnswer(e) {
     const answerZeroBased = q.answer.map(idx => idx - 1);
     const correct = arraysEqual(selected.sort(), answerZeroBased.slice().sort());
     if (correct) {
-        score++;
         feedback.textContent = '✔️ 答對了！';
         feedback.style.color = '#27ae60';
     } else {
@@ -131,7 +130,7 @@ function submitAnswer(e) {
     if (q.explanation) {
         explanationDiv.innerHTML = q.explanation.replace(/\n/g, '<br>');
         explanationDiv.style.display = 'block';
-    } else {
+    } else if (explanationDiv) {
         explanationDiv.style.display = 'none';
     }
     // 顯示繼續按鈕
@@ -151,10 +150,10 @@ function submitAnswer(e) {
 
 function goNextQuestion(e) {
     e.preventDefault();
-    current++;
     let nextBtn = document.getElementById('next-btn');
     if (nextBtn) nextBtn.style.display = 'none';
     document.getElementById('submit-btn').disabled = false;
+    current++;
     if (current < total) {
         showQuestion();
     } else {
