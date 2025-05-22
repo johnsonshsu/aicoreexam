@@ -88,3 +88,15 @@ button:hover {
     color: #27ae60;
     margin-bottom: 16px;
 }
+
+.header-title {
+    background: #e0e0e0;
+    color: #222;
+    padding: 18px 0 14px 0;
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    border-radius: 10px 10px 0 0;
+    margin: -32px -24px 24px -24px;
+    letter-spacing: 2px;
+}
