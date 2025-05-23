@@ -26,6 +26,7 @@ fetch('data/questions.json')
         // 自動設定題號範圍最大值
         const rangeEndInput = document.getElementById('question-range-end');
         if (rangeEndInput) rangeEndInput.value = data.length;
+        showWeightedQuestionsList();
     });
 
 document.getElementById('start-btn').addEventListener('click', startQuiz);
@@ -33,6 +34,19 @@ document.getElementById('submit-btn').addEventListener('click', submitAnswer);
 document.getElementById('restart-btn').addEventListener('click', () => {
     resultSection.classList.add('hidden');
     setupSection.classList.remove('hidden');
+});
+document.getElementById('download-json-btn').addEventListener('click', function () {
+    // 取得目前記憶體中的 questions 陣列
+    const dataStr = JSON.stringify(questions, null, 4);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'questions.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 });
 
 function startTimer() {
@@ -118,7 +132,11 @@ function showQuestion() {
     feedback.textContent = '';
     optionsForm.innerHTML = '';
     const q = quizQuestions[current];
-    questionText.textContent = `(${current + 1}/${total}) ` + q.question;
+    // 顯示進度
+    const progressDiv = document.getElementById('progress-info');
+    progressDiv.textContent = `第 ${current + 1} / ${total} 題　進度：${Math.round(((current + 1) / total) * 100)}%`;
+    // 題目文字（不再顯示進度）
+    questionText.textContent = q.question;
     // 圖片
     if (q.image) {
         questionImage.innerHTML = `<img src="${q.image}" alt="題目圖片">`;
@@ -309,4 +327,39 @@ function shuffle(arr) {
 
 function arraysEqual(a, b) {
     return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+function showWeightedQuestionsList() {
+    // 篩選權重大於1的題目
+    const weighted = questions
+        .map((q, idx) => ({
+            id: q.id || (idx + 1),
+            weight: q.weight || 1,
+            question: q.question
+        }))
+        .filter(q => q.weight > 1)
+        .sort((a, b) => b.weight - a.weight);
+    let listDiv = document.getElementById('weighted-list');
+    if (!listDiv) {
+        listDiv = document.createElement('div');
+        listDiv.id = 'weighted-list';
+        listDiv.style.margin = '16px 0 8px 0';
+        listDiv.style.background = '#fffbe6';
+        listDiv.style.border = '1px solid #ffe58f';
+        listDiv.style.padding = '10px 16px';
+        listDiv.style.borderRadius = '6px';
+        listDiv.style.fontSize = '1em';
+        setupSection.insertBefore(listDiv, setupSection.firstChild.nextSibling);
+    }
+    if (weighted.length === 0) {
+        listDiv.style.display = 'none';
+        return;
+    }
+    let html = '<b>高權重題目列表：</b><br><table style="width:100%;margin-top:6px;font-size:0.98em;"><tr><th style="text-align:left;width:60px;">編號</th><th style="text-align:left;width:60px;">權重</th><th style="text-align:left;">題目</th></tr>';
+    weighted.forEach(q => {
+        html += `<tr><td>${q.id}</td><td>${q.weight}</td><td>${q.question}</td></tr>`;
+    });
+    html += '</table>';
+    listDiv.innerHTML = html;
+    listDiv.style.display = 'block';
 }

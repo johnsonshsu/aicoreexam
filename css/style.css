@@ -107,3 +107,10 @@ button:hover {
     margin-bottom: 10px;
     text-align: right;
 }
+
+.progress-info {
+    font-size: 1.1em;
+    color: #3498db;
+    font-weight: bold;
+    letter-spacing: 1px;
+}

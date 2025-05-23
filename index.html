@@ -27,9 +27,13 @@
                 <option value="all">全部</option>
             </select>
             <button id="start-btn">開始模擬考試</button>
+            <button id="download-json-btn" type="button" style="margin-left:12px;">下載題庫JSON</button>
         </div>
         <div id="quiz-section" class="hidden">
-            <div id="timer" class="timer hidden">已用時間：<span id="timer-value">00:00</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div id="progress-info" class="progress-info"></div>
+                <div id="timer" class="timer hidden">已用時間：<span id="timer-value">00:00</span></div>
+            </div>
             <div id="question-image"></div>
             <div id="question-text"></div>
             <form id="options-form"></form>
