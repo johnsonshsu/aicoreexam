@@ -98,8 +98,11 @@ function getRandomQuestions(questions, count) {
     return selected;
 }
 
-// 修改 startQuiz 與 showResult
+// 合併 startQuiz，並在最前面強制隱藏 weighted-list
 function startQuiz() {
+    // 強制隱藏高權重題目列表
+    const weightedList = document.getElementById('weighted-list');
+    if (weightedList) weightedList.style.display = 'none';
     let countValue = document.getElementById('question-count').value;
     let count;
     if (countValue === 'all') {
@@ -121,6 +124,7 @@ function startQuiz() {
     quizQuestions = getRandomQuestions(rangedQuestions, total);
     current = 0;
     score = 0;
+    wrongQuestions = [];
     setupSection.classList.add('hidden');
     resultSection.classList.add('hidden');
     quizSection.classList.remove('hidden');
@@ -129,6 +133,9 @@ function startQuiz() {
 }
 
 function showQuestion() {
+    // 強制隱藏高權重題目列表
+    const weightedList = document.getElementById('weighted-list');
+    if (weightedList) weightedList.style.display = 'none';
     feedback.textContent = '';
     optionsForm.innerHTML = '';
     const q = quizQuestions[current];
@@ -254,6 +261,9 @@ function goNextQuestion(e) {
 }
 
 function showResult() {
+    // 強制隱藏高權重題目列表
+    const weightedList = document.getElementById('weighted-list');
+    if (weightedList) weightedList.style.display = 'none';
     quizSection.classList.add('hidden');
     resultSection.classList.remove('hidden');
     const percent = total > 0 ? Math.round((score / total) * 100) : 0;
@@ -263,6 +273,8 @@ function showResult() {
     timerDiv.classList.remove('hidden');
     const timerValue = document.getElementById('timer-value').textContent;
     let html = `您的分數：${score} / ${total}　正確率：${percent}%<br>總作答時間：${timerValue}`;
+    // 新增正確率圖形
+    html += '<div style="width:120px;margin:18px auto 0 auto;"><canvas id="accuracyChart" width="120" height="120"></canvas></div>';
     if (wrongQuestions.length > 0) {
         html += '<br><br><b>您答錯的題目：</b><ol style="margin-top:6px; color:#e74c3c;">';
         wrongQuestions.forEach(item => {
@@ -284,10 +296,45 @@ function showResult() {
         html += '</ol>';
     }
     scoreDiv.innerHTML = html;
+    // 畫正確率圖
+    setTimeout(() => {
+        if (document.getElementById('accuracyChart')) {
+            drawAccuracyChart(percent);
+        }
+    }, 0);
+}
+
+// 新增正確率圖形函式
+function drawAccuracyChart(percent) {
+    const canvas = document.getElementById('accuracyChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 120, 120);
+    // 背景圓
+    ctx.beginPath();
+    ctx.arc(60, 60, 50, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#eee';
+    ctx.lineWidth = 16;
+    ctx.stroke();
+    // 正確率圓弧
+    ctx.beginPath();
+    ctx.arc(60, 60, 50, -Math.PI / 2, (2 * Math.PI) * (percent / 100) - Math.PI / 2);
+    ctx.strokeStyle = '#4caf50';
+    ctx.lineWidth = 16;
+    ctx.stroke();
+    // 文字
+    ctx.font = '24px Arial';
+    ctx.fillStyle = '#333';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(percent + '%', 60, 60);
 }
 
 // 在重新開始時清空錯誤題目
 function startQuiz() {
+    // 強制隱藏高權重題目列表
+    const weightedList = document.getElementById('weighted-list');
+    if (weightedList) weightedList.style.display = 'none';
     let countValue = document.getElementById('question-count').value;
     let count;
     if (countValue === 'all') {
@@ -343,15 +390,10 @@ function showWeightedQuestionsList() {
     if (!listDiv) {
         listDiv = document.createElement('div');
         listDiv.id = 'weighted-list';
-        listDiv.style.margin = '16px 0 8px 0';
-        listDiv.style.background = '#fffbe6';
-        listDiv.style.border = '1px solid #ffe58f';
-        listDiv.style.padding = '10px 16px';
-        listDiv.style.borderRadius = '6px';
-        listDiv.style.fontSize = '1em';
-        setupSection.insertBefore(listDiv, setupSection.firstChild.nextSibling);
+        document.querySelector('.container').appendChild(listDiv);
     }
-    if (weighted.length === 0) {
+    // 嚴格控制只在 setup-section 顯示時才顯示
+    if (weighted.length === 0 || setupSection.classList.contains('hidden')) {
         listDiv.style.display = 'none';
         return;
     }
@@ -362,4 +404,14 @@ function showWeightedQuestionsList() {
     html += '</table>';
     listDiv.innerHTML = html;
     listDiv.style.display = 'block';
+}
+
+// 重新顯示 setup-section 時也要重新顯示高權重題目列表
+const restartBtn = document.getElementById('restart-btn');
+if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+        setTimeout(() => {
+            showWeightedQuestionsList();
+        }, 0);
+    });
 }
