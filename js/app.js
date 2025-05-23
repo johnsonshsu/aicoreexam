@@ -238,7 +238,7 @@ function submitAnswer(e) {
         nextBtn = document.createElement('button');
         nextBtn.id = 'next-btn';
         nextBtn.textContent = '繼續下一題';
-        nextBtn.style.marginLeft = '12px';
+        //nextBtn.style.marginLeft = '12px';
         nextBtn.addEventListener('click', goNextQuestion);
         quizSection.appendChild(nextBtn);
     }

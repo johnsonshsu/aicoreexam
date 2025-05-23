@@ -47,6 +47,14 @@ button:hover {
     background: #217dbb;
 }
 
+#submit-btn {
+    background: #43a047;
+}
+
+#submit-btn:hover {
+    background: #388e3c;
+}
+
 #start-btn {
     margin-left: 20px;
 }
