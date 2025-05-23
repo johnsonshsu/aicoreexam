@@ -100,3 +100,10 @@ button:hover {
     margin: -32px -24px 24px -24px;
     letter-spacing: 2px;
 }
+
+.timer {
+    font-size: 1.1em;
+    color: #333;
+    margin-bottom: 10px;
+    text-align: right;
+}

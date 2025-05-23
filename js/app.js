@@ -4,6 +4,8 @@ let quizQuestions = [];
 let current = 0;
 let score = 0;
 let total = 0;
+let timerInterval;
+let startTime = 0;
 
 const setupSection = document.getElementById('setup-section');
 const quizSection = document.getElementById('quiz-section');
@@ -20,6 +22,9 @@ fetch('data/questions.json')
     .then(data => {
         questions = data;
         document.getElementById('start-btn').disabled = false;
+        // 自動設定題號範圍最大值
+        const rangeEndInput = document.getElementById('question-range-end');
+        if (rangeEndInput) rangeEndInput.value = data.length;
     });
 
 document.getElementById('start-btn').addEventListener('click', startQuiz);
@@ -29,6 +34,25 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     setupSection.classList.remove('hidden');
 });
 
+function startTimer() {
+    const timerDiv = document.getElementById('timer');
+    const timerValue = document.getElementById('timer-value');
+    timerDiv.classList.remove('hidden');
+    startTime = Date.now();
+    timerValue.textContent = '00:00';
+    timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const min = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const sec = String(elapsed % 60).padStart(2, '0');
+        timerValue.textContent = `${min}:${sec}`;
+    }, 1000);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+}
+
+// 修改 startQuiz 與 showResult
 function startQuiz() {
     let countValue = document.getElementById('question-count').value;
     let count;
@@ -37,14 +61,24 @@ function startQuiz() {
     } else {
         count = parseInt(countValue, 10);
     }
-    if (isNaN(count) || count < 1) return;
-    total = Math.min(count, questions.length);
-    quizQuestions = shuffle([...questions]).slice(0, total);
+    // 取得範圍
+    let rangeStart = parseInt(document.getElementById('question-range-start').value, 10);
+    let rangeEnd = parseInt(document.getElementById('question-range-end').value, 10);
+    if (isNaN(rangeStart) || rangeStart < 1) rangeStart = 1;
+    if (isNaN(rangeEnd) || rangeEnd < 1) rangeEnd = questions.length;
+    if (rangeStart > rangeEnd) [rangeStart, rangeEnd] = [rangeEnd, rangeStart];
+    rangeStart = Math.max(1, rangeStart);
+    rangeEnd = Math.min(questions.length, rangeEnd);
+    // 篩選範圍內題目
+    const rangedQuestions = questions.slice(rangeStart - 1, rangeEnd);
+    total = Math.min(count, rangedQuestions.length);
+    quizQuestions = shuffle([...rangedQuestions]).slice(0, total);
     current = 0;
     score = 0;
     setupSection.classList.add('hidden');
     resultSection.classList.add('hidden');
     quizSection.classList.remove('hidden');
+    startTimer();
     showQuestion();
 }
 
@@ -172,6 +206,10 @@ function showResult() {
     quizSection.classList.add('hidden');
     resultSection.classList.remove('hidden');
     scoreDiv.textContent = `您的分數：${score} / ${total}`;
+    stopTimer();
+    // 顯示總用時
+    const timerDiv = document.getElementById('timer');
+    timerDiv.classList.remove('hidden');
 }
 
 function shuffle(arr) {
