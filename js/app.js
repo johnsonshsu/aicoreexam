@@ -6,6 +6,7 @@ let score = 0;
 let total = 0;
 let timerInterval;
 let startTime = 0;
+let wrongQuestions = [];
 
 const setupSection = document.getElementById('setup-section');
 const quizSection = document.getElementById('quiz-section');
@@ -196,6 +197,7 @@ function submitAnswer(e) {
     } else {
         feedback.textContent = '❌ 答錯了！正確答案：' + answerZeroBased.map(i => q.options[i]).join('、');
         feedback.style.color = '#e74c3c';
+        wrongQuestions.push(q);
     }
     // 顯示詳細說明欄位（若有）
     const explanationDiv = document.getElementById('explanation');
@@ -242,7 +244,46 @@ function showResult() {
     const timerDiv = document.getElementById('timer');
     timerDiv.classList.remove('hidden');
     const timerValue = document.getElementById('timer-value').textContent;
-    scoreDiv.innerHTML = `您的分數：${score} / ${total}　正確率：${percent}%<br>總作答時間：${timerValue}`;
+    let html = `您的分數：${score} / ${total}　正確率：${percent}%<br>總作答時間：${timerValue}`;
+    if (wrongQuestions.length > 0) {
+        html += '<br><br><b>您答錯的題目：</b><ol style="margin-top:6px; color:#e74c3c;">';
+        wrongQuestions.forEach(q => {
+            html += `<li style='margin-bottom:8px;'>${q.question}</li>`;
+        });
+        html += '</ol>';
+    }
+    scoreDiv.innerHTML = html;
+}
+
+// 在重新開始時清空錯誤題目
+function startQuiz() {
+    let countValue = document.getElementById('question-count').value;
+    let count;
+    if (countValue === 'all') {
+        count = questions.length;
+    } else {
+        count = parseInt(countValue, 10);
+    }
+    // 取得範圍
+    let rangeStart = parseInt(document.getElementById('question-range-start').value, 10);
+    let rangeEnd = parseInt(document.getElementById('question-range-end').value, 10);
+    if (isNaN(rangeStart) || rangeStart < 1) rangeStart = 1;
+    if (isNaN(rangeEnd) || rangeEnd < 1) rangeEnd = questions.length;
+    if (rangeStart > rangeEnd) [rangeStart, rangeEnd] = [rangeEnd, rangeStart];
+    rangeStart = Math.max(1, rangeStart);
+    rangeEnd = Math.min(questions.length, rangeEnd);
+    // 篩選範圍內題目
+    const rangedQuestions = questions.slice(rangeStart - 1, rangeEnd);
+    total = Math.min(count, rangedQuestions.length);
+    quizQuestions = getRandomQuestions(rangedQuestions, total);
+    current = 0;
+    score = 0;
+    wrongQuestions = [];
+    setupSection.classList.add('hidden');
+    resultSection.classList.add('hidden');
+    quizSection.classList.remove('hidden');
+    startTimer();
+    showQuestion();
 }
 
 function shuffle(arr) {
