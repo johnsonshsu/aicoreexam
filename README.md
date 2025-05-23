@@ -26,6 +26,38 @@ data/questions.json
 images/
 ```
 
+## 題庫檔案（questions.json）結構說明
+
+每一題為一個物件，常用欄位如下：
+
+| 欄位         | 型別      | 說明                                                         |
+|--------------|-----------|--------------------------------------------------------------|
+| id           | number    | 題目編號（唯一值）                                           |
+| type         | string    | 題型：'single'（單選）或 'multi'（複選）                     |
+| question     | string    | 題目內容                                                     |
+| options      | string[]  | 選項陣列                                                     |
+| answer       | number[]  | 正確答案（1-based，例：[2] 代表第2個選項，複選可多個）        |
+| weight       | number    | 權重，預設為1，數字越大該題被抽中的機率越高（可省略）         |
+| image        | string    | 題目圖片路徑（可省略）                                       |
+| explanation  | string    | 詳細說明，支援多行（\n 斷行，答題後顯示）                   |
+
+### 範例
+```json
+{
+  "id": 1,
+  "type": "single",
+  "question": "請問下列何者為 HTML5 標籤？",
+  "options": ["<header>", "<blink>", "<footer>", "<h7>"],
+  "answer": [1,3],
+  "weight": 2,
+  "image": "images/html-img-tag.png",
+  "explanation": "<header> 和 <footer> 為 HTML5 標籤，<blink> 和 <h7> 並非標準標籤。"
+}
+```
+- `answer` 欄位為 1-based（第一個選項為 1）。
+- 權重（weight）可省略，預設為 1。
+- explanation 可用 \n 斷行。
+
 ---
 
 如需進階功能（如分數統計、題庫分類、進度儲存等）可再擴充。

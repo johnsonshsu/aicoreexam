@@ -52,6 +52,37 @@ function stopTimer() {
     clearInterval(timerInterval);
 }
 
+// 新增 buildWeightedPool 與 getRandomQuestions，支援題目權重加權隨機抽題
+function buildWeightedPool(questions) {
+    const pool = [];
+    questions.forEach(q => {
+        const w = q.weight || 1;
+        for (let i = 0; i < w; i++) {
+            pool.push(q);
+        }
+    });
+    return pool;
+}
+
+function getRandomQuestions(questions, count) {
+    const pool = buildWeightedPool(questions);
+    const selected = [];
+    const usedIds = new Set();
+    while (selected.length < count && pool.length > 0) {
+        const idx = Math.floor(Math.random() * pool.length);
+        const q = pool[idx];
+        if (!usedIds.has(q.id)) {
+            selected.push(q);
+            usedIds.add(q.id);
+        }
+        // 移除所有該題的分身，避免重複
+        for (let i = pool.length - 1; i >= 0; i--) {
+            if (pool[i].id === q.id) pool.splice(i, 1);
+        }
+    }
+    return selected;
+}
+
 // 修改 startQuiz 與 showResult
 function startQuiz() {
     let countValue = document.getElementById('question-count').value;
@@ -72,7 +103,7 @@ function startQuiz() {
     // 篩選範圍內題目
     const rangedQuestions = questions.slice(rangeStart - 1, rangeEnd);
     total = Math.min(count, rangedQuestions.length);
-    quizQuestions = shuffle([...rangedQuestions]).slice(0, total);
+    quizQuestions = getRandomQuestions(rangedQuestions, total);
     current = 0;
     score = 0;
     setupSection.classList.add('hidden');
@@ -205,11 +236,13 @@ function goNextQuestion(e) {
 function showResult() {
     quizSection.classList.add('hidden');
     resultSection.classList.remove('hidden');
-    scoreDiv.textContent = `您的分數：${score} / ${total}`;
+    const percent = total > 0 ? Math.round((score / total) * 100) : 0;
     stopTimer();
     // 顯示總用時
     const timerDiv = document.getElementById('timer');
     timerDiv.classList.remove('hidden');
+    const timerValue = document.getElementById('timer-value').textContent;
+    scoreDiv.innerHTML = `您的分數：${score} / ${total}　正確率：${percent}%<br>總作答時間：${timerValue}`;
 }
 
 function shuffle(arr) {
