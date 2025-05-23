@@ -197,7 +197,7 @@ function submitAnswer(e) {
     } else {
         feedback.textContent = '❌ 答錯了！正確答案：' + answerZeroBased.map(i => q.options[i]).join('、');
         feedback.style.color = '#e74c3c';
-        wrongQuestions.push(q);
+        wrongQuestions.push({ q, selected });
     }
     // 顯示詳細說明欄位（若有）
     const explanationDiv = document.getElementById('explanation');
@@ -247,8 +247,21 @@ function showResult() {
     let html = `您的分數：${score} / ${total}　正確率：${percent}%<br>總作答時間：${timerValue}`;
     if (wrongQuestions.length > 0) {
         html += '<br><br><b>您答錯的題目：</b><ol style="margin-top:6px; color:#e74c3c;">';
-        wrongQuestions.forEach(q => {
-            html += `<li style='margin-bottom:8px;'>${q.question}</li>`;
+        wrongQuestions.forEach(item => {
+            // item: { q, selected }
+            const q = item.q;
+            // 使用者答案（1-based轉文字）
+            let userAns = item.selected.map(idx => q.options[idx] || '').join('、');
+            if (!userAns) userAns = '<span style="color:#aaa">未作答</span>';
+            // 正確答案（1-based轉文字）
+            const correctAns = (q.answer.map(idx => q.options[idx - 1] || '').join('、'));
+            html += `<li style='margin-bottom:12px;'>
+                <div>${q.question}</div>
+                <div style='font-size:0.98em;margin-top:2px;'>
+                  <span style='color:#888'>您的答案：</span><span style='color:#222'>${userAns}</span><br>
+                  <span style='color:#888'>正確答案：</span><span style='color:#222'>${correctAns}</span>
+                </div>
+            </li>`;
         });
         html += '</ol>';
     }
