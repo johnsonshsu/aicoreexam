@@ -142,8 +142,40 @@ function startQuiz() {
     quizSection.classList.remove('hidden');
     startTimer();
     showQuestion();
+    setupJumpSelect(); // showQuestion 之後呼叫，確保 current/total 正確
 }
 
+function setupJumpSelect() {
+    const jumpSelect = document.getElementById('jump-select');
+    const jumpBtn = document.getElementById('jump-btn');
+    if (!jumpSelect || !jumpBtn) return;
+    jumpSelect.innerHTML = '';
+    if (total > 0) {
+        for (let i = 0; i < total; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = `第 ${i + 1} 題`;
+            jumpSelect.appendChild(opt);
+        }
+        jumpSelect.value = current;
+        jumpSelect.style.display = '';
+        jumpBtn.style.display = '';
+    } else {
+        jumpSelect.style.display = 'none';
+        jumpBtn.style.display = 'none';
+    }
+    // 先移除舊事件再註冊，避免重複
+    jumpBtn.onclick = null;
+    jumpBtn.onclick = function () {
+        const idx = parseInt(jumpSelect.value, 10);
+        if (!isNaN(idx) && idx >= 0 && idx < total) {
+            current = idx;
+            showQuestion();
+        }
+    };
+}
+
+// 在 showQuestion 時同步更新下拉選單選項
 function showQuestion() {
     // 強制隱藏高權重題目列表
     const weightedList = document.getElementById('weighted-list');
@@ -211,6 +243,8 @@ function showQuestion() {
     // 隱藏繼續按鈕
     let nextBtn = document.getElementById('next-btn');
     if (nextBtn) nextBtn.style.display = 'none';
+    // 更新跳題下拉選單選中狀態，並確保顯示與內容正確
+    setupJumpSelect();
 }
 
 function submitAnswer(e) {
@@ -263,6 +297,21 @@ function submitAnswer(e) {
     // 禁用提交按鈕避免重複作答
     document.getElementById('submit-btn').disabled = true;
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const jumpBtn = document.getElementById('jump-btn');
+    if (jumpBtn) {
+        jumpBtn.addEventListener('click', () => {
+            const jumpSelect = document.getElementById('jump-select');
+            if (!jumpSelect) return;
+            const idx = parseInt(jumpSelect.value, 10);
+            if (!isNaN(idx) && idx >= 0 && idx < total) {
+                current = idx;
+                showQuestion();
+            }
+        });
+    }
+});
 
 function goNextQuestion(e) {
     e.preventDefault();

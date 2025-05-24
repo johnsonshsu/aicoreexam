@@ -28,7 +28,7 @@ input[type="number"] {
     width: 60px;
     padding: 4px 8px;
     margin: 0 8px;
-    font-size: 1em;
+    font-size: 1.1em;
 }
 
 button {
@@ -134,10 +134,19 @@ button:hover {
 }
 
 #question-count {
-    font-size: 1.0em;
+    font-size: 1.1em;
     padding: 2px 8px;
     min-width: 80px;
     height: 30px;
     border-radius: 6px;
     margin: 8px;
+}
+
+#jump-select {
+    font-size: 1.1em;
+    padding: 8px;
+    min-width: 90px;
+    height: 40px;
+    border-radius: 6px;
+    margin: 16px 8px 0 0;
 }

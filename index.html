@@ -40,14 +40,18 @@
         <div id="quiz-section" class="hidden">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                 <div id="progress-info" class="progress-info"></div>
-                <div id="timer" class="timer hidden">已用時間：<span id="timer-value">00:00</span></div>
+                <div style="display:flex;align-items:center;">
+                    <div id="timer" class="timer hidden">已用時間：<span id="timer-value">00:00</span></div>
+                </div>
             </div>
             <div id="question-image"></div>
             <div id="question-text"></div>
             <form id="options-form"></form>
-            <div style="margin-top:8px;">
+            <div style="margin-top:8px; display: flex; align-items: center;">
                 <button id="submit-btn">提交答案</button>
                 <button id="quit-btn" type="button" style="margin-left:12px;">重新開始</button>
+                <select id="jump-select" style="margin-left:24px;display:none;"></select>
+                <button id="jump-btn" type="button" style="margin-left:8px;display:none;">跳到此題</button>
             </div>
             <div id="feedback"></div>
         </div>
