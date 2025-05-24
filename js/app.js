@@ -57,6 +57,17 @@ document.getElementById('quit-btn').addEventListener('click', () => {
     setupSection.classList.remove('hidden');
     stopTimer();
     showWeightedQuestionsList();
+    // 重新啟用提交按鈕
+    setTimeout(() => {
+        const submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            // 先移除舊事件再重新綁定，避免多重綁定
+            submitBtn.replaceWith(submitBtn.cloneNode(true));
+            const newSubmitBtn = document.getElementById('submit-btn');
+            if (newSubmitBtn) newSubmitBtn.addEventListener('click', submitAnswer);
+        }
+    }, 100);
 });
 
 function startTimer() {
@@ -214,11 +225,16 @@ function showQuestion() {
         input.value = item.idx; // value 設為原始 index
         input.id = id;
         input.style.marginRight = '8px';
+        // 新增：選項前加上數字
+        const numberSpan = document.createElement('span');
+        numberSpan.textContent = (i + 1) + '. ';
+        numberSpan.style.marginRight = '4px';
         const label = document.createElement('label');
         label.htmlFor = id;
         label.textContent = item.opt;
         label.style.margin = 0;
         wrapper.appendChild(input);
+        wrapper.appendChild(numberSpan);
         wrapper.appendChild(label);
         optionsForm.appendChild(wrapper);
     });
@@ -287,6 +303,37 @@ function submitAnswer(e) {
         feedback.style.color = '#e74c3c';
         wrongQuestions.push({ q, selected });
     }
+    // 顯示繼續按鈕（先於詳細說明欄位）
+    let nextBtn = document.getElementById('next-btn');
+    if (!nextBtn) {
+        nextBtn = document.createElement('button');
+        nextBtn.id = 'next-btn';
+        nextBtn.setAttribute("class", "btn btn-primary mt-2");
+        nextBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (current === total - 1) {
+                if (confirm('已經是最後一題，確定要交卷嗎？')) {
+                    goNextQuestion(e);
+                }
+            } else {
+                goNextQuestion(e);
+            }
+        });
+        // 插入到 explanationDiv 前面
+        const explanationDiv = document.getElementById('explanation');
+        if (explanationDiv && explanationDiv.parentNode) {
+            explanationDiv.parentNode.insertBefore(nextBtn, explanationDiv);
+        } else {
+            quizSection.appendChild(nextBtn);
+        }
+    }
+    // 根據是否為最後一題調整按鈕文字
+    if (current === total - 1) {
+        nextBtn.textContent = '答完交卷';
+    } else {
+        nextBtn.textContent = '繼續下一題';
+    }
+    nextBtn.style.display = 'inline-block';
     // 顯示詳細說明欄位（若有）
     const explanationDiv = document.getElementById('explanation');
     if (q.explanation) {
@@ -295,17 +342,6 @@ function submitAnswer(e) {
     } else if (explanationDiv) {
         explanationDiv.style.display = 'none';
     }
-    // 顯示繼續按鈕
-    let nextBtn = document.getElementById('next-btn');
-    if (!nextBtn) {
-        nextBtn = document.createElement('button');
-        nextBtn.id = 'next-btn';
-        nextBtn.setAttribute("class", "btn btn-primary mt-2");
-        nextBtn.textContent = '繼續下一題';
-        nextBtn.addEventListener('click', goNextQuestion);
-        quizSection.appendChild(nextBtn);
-    }
-    nextBtn.style.display = 'inline-block';
     // 禁用提交按鈕避免重複作答
     document.getElementById('submit-btn').disabled = true;
 }
