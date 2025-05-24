@@ -49,6 +49,14 @@ document.getElementById('download-json-btn').addEventListener('click', function 
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 });
+document.getElementById('quit-btn').addEventListener('click', () => {
+    // 結束測驗，回到一開始畫面
+    quizSection.classList.add('hidden');
+    resultSection.classList.add('hidden');
+    setupSection.classList.remove('hidden');
+    stopTimer();
+    showWeightedQuestionsList();
+});
 
 function startTimer() {
     const timerDiv = document.getElementById('timer');

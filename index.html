@@ -30,8 +30,9 @@
             </select>
             <br>
             <label>答案順序：</label>
-            <label><input type="radio" name="answer-order" value="original" checked> 原始順序</label>
-            <label style="margin-left:12px;"><input type="radio" name="answer-order" value="shuffle"> 隨機順序</label>
+            <label><input type="radio" name="answer-order" value="original"> 原始順序</label>
+            <label style="margin-left:12px;"><input type="radio" name="answer-order" value="shuffle" checked>
+                隨機順序</label>
             <br>
             <button id="start-btn">開始模擬考試</button>
             <button id="download-json-btn" type="button" style="margin-left:12px;">下載題庫JSON</button>
@@ -44,7 +45,10 @@
             <div id="question-image"></div>
             <div id="question-text"></div>
             <form id="options-form"></form>
-            <button id="submit-btn">提交答案</button>
+            <div style="margin-top:8px;">
+                <button id="submit-btn">提交答案</button>
+                <button id="quit-btn" type="button" style="margin-left:12px;">重新開始</button>
+            </div>
             <div id="feedback"></div>
         </div>
         <div id="result-section" class="hidden">
