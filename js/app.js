@@ -7,6 +7,7 @@ let total = 0;
 let timerInterval;
 let startTime = 0;
 let wrongQuestions = [];
+let answerOrder = 'original'; // 新增答案順序全域變數
 
 const setupSection = document.getElementById('setup-section');
 const quizSection = document.getElementById('quiz-section');
@@ -103,6 +104,9 @@ function startQuiz() {
     // 強制隱藏高權重題目列表
     const weightedList = document.getElementById('weighted-list');
     if (weightedList) weightedList.style.display = 'none';
+    // 讀取答案順序設定
+    const orderRadio = document.querySelector('input[name="answer-order"]:checked');
+    answerOrder = orderRadio ? orderRadio.value : 'original';
     let countValue = document.getElementById('question-count').value;
     let count;
     if (countValue === 'all') {
@@ -150,9 +154,14 @@ function showQuestion() {
     } else {
         questionImage.innerHTML = '';
     }
+    // 處理選項順序
+    let optionList = q.options.map((opt, idx) => ({ opt, idx }));
+    if (answerOrder === 'shuffle') {
+        optionList = shuffle(optionList);
+    }
     // 單選或複選
-    q.options.forEach((opt, idx) => {
-        const id = `opt${idx}`;
+    optionList.forEach((item, i) => {
+        const id = `opt${i}`;
         const wrapper = document.createElement('div');
         wrapper.style.display = 'flex';
         wrapper.style.alignItems = 'center';
@@ -160,12 +169,12 @@ function showQuestion() {
         const input = document.createElement('input');
         input.type = q.answer.length > 1 ? 'checkbox' : 'radio';
         input.name = 'option';
-        input.value = idx;
+        input.value = item.idx; // value 設為原始 index
         input.id = id;
         input.style.marginRight = '8px';
         const label = document.createElement('label');
         label.htmlFor = id;
-        label.textContent = opt;
+        label.textContent = item.opt;
         label.style.margin = 0;
         wrapper.appendChild(input);
         wrapper.appendChild(label);
@@ -335,6 +344,9 @@ function startQuiz() {
     // 強制隱藏高權重題目列表
     const weightedList = document.getElementById('weighted-list');
     if (weightedList) weightedList.style.display = 'none';
+    // 讀取答案順序設定
+    const orderRadio = document.querySelector('input[name="answer-order"]:checked');
+    answerOrder = orderRadio ? orderRadio.value : 'original';
     let countValue = document.getElementById('question-count').value;
     let count;
     if (countValue === 'all') {

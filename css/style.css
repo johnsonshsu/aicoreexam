@@ -66,7 +66,7 @@ button:hover {
 
 #question-image img {
     max-width: 100%;
-    max-height: 200px;
+    max-height: 400px;
     display: block;
     margin: 0 auto 16px auto;
 }
@@ -131,4 +131,13 @@ button:hover {
     margin: 32px 0 0 0;
     font-size: 1em;
     box-shadow: 0 2px 8px rgba(255, 229, 143, 0.12);
+}
+
+#question-count {
+    font-size: 1.0em;
+    padding: 2px 12px;
+    min-width: 80px;
+    height: 30px;
+    border-radius: 6px;
+    margin: 8px;
 }
