@@ -69,6 +69,18 @@ document.getElementById('quit-btn').addEventListener('click', () => {
         }
     }, 100);
 });
+document.getElementById('preview-json-btn').addEventListener('click', function () {
+    // 取得目前記憶體中的 questions 陣列
+    const previewContent = document.getElementById('json-preview-content');
+    if (previewContent) {
+        // 顯示所有題目
+        const previewText = JSON.stringify(questions, null, 4);
+        previewContent.textContent = previewText;
+    }
+    // 顯示 Bootstrap modal
+    const modal = new bootstrap.Modal(document.getElementById('json-preview-modal'));
+    modal.show();
+});
 
 function startTimer() {
     const timerDiv = document.getElementById('timer');

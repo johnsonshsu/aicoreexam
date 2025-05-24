@@ -45,6 +45,23 @@
                 <div class="float-start me-2">
                     <button id="download-json-btn" class="btn btn-primary">下載題庫</button>
                 </div>
+                <div class="float-start me-2">
+                    <button id="preview-json-btn" class="btn btn-secondary">預覽題庫</button>
+                </div>
+            </div>
+            <div id="json-preview-modal" class="modal fade" tabindex="-1" aria-labelledby="jsonPreviewLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="jsonPreviewLabel">題庫 JSON 預覽</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" style="max-height:60vh;overflow:auto;">
+                            <pre id="json-preview-content" style="font-size:1em;white-space:pre-wrap;"></pre>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div id="quiz-section" class="hidden">
