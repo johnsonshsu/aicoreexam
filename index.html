@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 人工智慧核心能力模擬試題復習系統</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
 </head>
@@ -33,10 +35,17 @@
             <label>答案順序：</label>
             <label><input type="radio" name="answer-order" value="original"> 原始順序</label>
             <label style="margin-left:12px;"><input type="radio" name="answer-order" value="shuffle" checked>
-                隨機順序</label>
-            <br>
-            <button id="start-btn">開始模擬考試</button>
-            <button id="download-json-btn" type="button" style="margin-left:12px;">下載題庫JSON</button>
+                隨機順序
+            </label>
+            <hr>
+            <div>
+                <div class="float-start me-2">
+                    <button id="start-btn" class="btn btn-success">開始考試</button>
+                </div>
+                <div class="float-start me-2">
+                    <button id="download-json-btn" class="btn btn-primary">下載題庫</button>
+                </div>
+            </div>
         </div>
         <div id="quiz-section" class="hidden">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -45,26 +54,36 @@
                     <div id="timer" class="timer hidden">已用時間：<span id="timer-value">00:00</span></div>
                 </div>
             </div>
+            <hr />
             <div id="question-image"></div>
             <div id="question-text"></div>
             <form id="options-form"></form>
-            <div style="margin-top:8px; display: flex; align-items: center;">
-                <button id="submit-btn">提交答案</button>
-            </div>
-            <div style="margin-top:8px; display: flex; align-items: center;">
-                <button id="quit-btn" type="button" style="margin-left:0;">重新開始</button>
-                <select id="jump-select" style="margin-left:24px;display:none;"></select>
-                <button id="jump-btn" type="button" style="margin-left:8px;display:none;">跳到此題</button>
+            <hr />
+            <div>
+                <div class="float-start me-2">
+                    <button id="submit-btn" class="btn btn-success">提交答案</button>
+                </div>
+                <div class="float-end me-2">
+                    <button id="quit-btn" type="button" class="btn btn-danger">重新開始</button>
+                </div>
+                <div class="float-end me-2">
+                    <button id="jump-btn" type="button" class="btn btn-primary">跳到此題</button>
+                </div>
+                <div class="float-end me-2">
+                    <select id="jump-select" style="margin-left:24px;display:none;"></select>
+                </div>
             </div>
             <div id="feedback"></div>
         </div>
         <div id="result-section" class="hidden">
             <h2>考試結束</h2>
             <div id="score"></div>
-            <button id="restart-btn">再考一次</button>
+            <button id="restart-btn" class="btn btn-primary">再考一次</button>
         </div>
         <div id="weighted-list"></div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/all.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 

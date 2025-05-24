@@ -300,6 +300,7 @@ function submitAnswer(e) {
     if (!nextBtn) {
         nextBtn = document.createElement('button');
         nextBtn.id = 'next-btn';
+        nextBtn.setAttribute("class", "btn btn-primary mt-2");
         nextBtn.textContent = '繼續下一題';
         nextBtn.addEventListener('click', goNextQuestion);
         quizSection.appendChild(nextBtn);
