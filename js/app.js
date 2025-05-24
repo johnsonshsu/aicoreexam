@@ -397,9 +397,11 @@ function showWeightedQuestionsList() {
         listDiv.style.display = 'none';
         return;
     }
-    let html = '<b>高權重題目列表：</b><br><table style="width:100%;margin-top:6px;font-size:0.98em;"><tr><th style="text-align:left;width:60px;">編號</th><th style="text-align:left;width:60px;">權重</th><th style="text-align:left;">題目</th></tr>';
+    // 只顯示兩欄：編號(權重)、題目
+    let html = '<b>高權重題目列表：</b><br><table style="width:100%;margin-top:6px;font-size:0.98em;"><tr><th style="text-align:left;width:60px;">編號</th><th style="text-align:left;">題目</th></tr>';
     weighted.forEach(q => {
-        html += `<tr><td>${q.id}</td><td>${q.weight}</td><td>${q.question}</td></tr>`;
+        const idStr = String(q.id).padStart(3, '0');
+        html += `<tr><td>${idStr}.(x${q.weight})</td><td>${q.question}</td></tr>`;
     });
     html += '</table>';
     listDiv.innerHTML = html;
