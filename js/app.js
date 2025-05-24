@@ -8,6 +8,7 @@ let timerInterval;
 let startTime = 0;
 let wrongQuestions = [];
 let answerOrder = 'original'; // 新增答案順序全域變數
+let answers = {}; // 新增：記錄每題最新作答狀態
 
 const setupSection = document.getElementById('setup-section');
 const quizSection = document.getElementById('quiz-section');
@@ -137,6 +138,7 @@ function startQuiz() {
     current = 0;
     score = 0;
     wrongQuestions = [];
+    answers = {}; // 開始測驗時清空作答紀錄
     setupSection.classList.add('hidden');
     resultSection.classList.add('hidden');
     quizSection.classList.remove('hidden');
@@ -266,8 +268,18 @@ function submitAnswer(e) {
     // 將 answer 轉為 0-based 以比對
     const answerZeroBased = q.answer.map(idx => idx - 1);
     const correct = arraysEqual(selected.sort(), answerZeroBased.slice().sort());
+    // 覆蓋 answers 紀錄
+    answers[current] = { correct, selected: selected.slice() };
+    // 重新計算分數
+    score = Object.values(answers).filter(a => a.correct).length;
+    // 更新 wrongQuestions
+    wrongQuestions = [];
+    Object.entries(answers).forEach(([idx, a]) => {
+        if (!a.correct) {
+            wrongQuestions.push({ q: quizQuestions[idx], selected: a.selected });
+        }
+    });
     if (correct) {
-        score++;
         feedback.textContent = '✔️ 答對了！';
         feedback.style.color = '#27ae60';
     } else {
@@ -289,7 +301,6 @@ function submitAnswer(e) {
         nextBtn = document.createElement('button');
         nextBtn.id = 'next-btn';
         nextBtn.textContent = '繼續下一題';
-        //nextBtn.style.marginLeft = '12px';
         nextBtn.addEventListener('click', goNextQuestion);
         quizSection.appendChild(nextBtn);
     }
@@ -426,6 +437,7 @@ function startQuiz() {
     current = 0;
     score = 0;
     wrongQuestions = [];
+    answers = {}; // 開始測驗時清空作答紀錄
     setupSection.classList.add('hidden');
     resultSection.classList.add('hidden');
     quizSection.classList.remove('hidden');
