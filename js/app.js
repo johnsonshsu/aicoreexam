@@ -547,13 +547,13 @@ function submitAnswer(e) {
         const optObj = optionList.find(o => o.idx === idx);
         return optObj ? optObj.opt : (q.options[idx] || '');
     }).join('、');
-    feedbackHtml += `<div style='margin-top:8px;'><b>正確答案：</b><span style='color:#2980b9;'>${ansText}</span></div>`;
-    // 只有答錯時才顯示你的答案
+    // 只有答錯時才顯示正確答案及你的答案
     if (!isCorrect) {
         let userText = userIdxArr.map(idx => {
             const optObj = optionList.find(o => o.idx === idx);
             return optObj ? optObj.opt : (q.options[idx] || '');
         }).join('、');
+        feedbackHtml += `<div style='margin-top:8px;'><b>正確答案：</b><span style='color:#2980b9;'>${ansText}</span></div>`;
         feedbackHtml += `<div><b>你的答案：</b>${userText || '<span style=\'color:#888\'>未作答</span>'}</div>`;
     }
     // 顯示詳細解析
