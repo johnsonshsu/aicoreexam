@@ -479,7 +479,7 @@ function showWeightedQuestionsList() {
     html += '<ul style="padding-left:18px;margin-bottom:0;">';
     highWeightQuestions.forEach(q => {
         html += `<li style="margin-bottom:2px;">
-            <span style="color:#2980b9;font-weight:bold;">#${q.id}</span>　
+            <span style="color:#2980b9;font-weight:bold;">${q.id}</span>　
             <span>${q.question.replace(/<[^>]+>/g, '').slice(0, 28)}${q.question.length > 28 ? '…' : ''}</span>
             <span style="color:#e67e22;font-size:0.95em;">（權重${q.weight}）</span>
         </li>`;
