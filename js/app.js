@@ -25,6 +25,39 @@ const scoreDiv = document.getElementById('score');
 
 let optionListPerQuestion = {}; // 新增：記錄每題選項順序
 
+function playSound(type) {
+    const soundCheckbox = document.getElementById('enable-sound');
+    const enableSoundNow = soundCheckbox && soundCheckbox.checked;
+    console.log('[playSound] called, enableSound:', enableSoundNow, 'type:', type);
+    if (!enableSoundNow) return;
+    let audio;
+    if (type === 'success') {
+        audio = new Audio('sounds/success.mp3');
+    } else if (type === 'error') {
+        audio = new Audio('sounds/error.mp3');
+    }
+    if (audio) {
+        try {
+            console.log('[playSound] 準備播放', type, audio.src);
+            audio.load();
+            audio.currentTime = 0;
+            audio.volume = 1;
+            const playPromise = audio.play();
+            if (playPromise) {
+                playPromise.then(() => {
+                    console.log('[playSound] 播放成功', type);
+                }).catch((err) => {
+                    console.warn('[playSound] 播放失敗', type, err);
+                });
+            }
+        } catch (err) {
+            console.warn('[playSound] 例外', type, err);
+        }
+    } else {
+        console.warn('[playSound] 未建立 audio 物件', type);
+    }
+}
+
 // 載入題庫
 fetch('data/questions.json')
     .then(res => res.json())
@@ -501,9 +534,13 @@ function submitAnswer(e) {
     // 顯示正確/錯誤（客製化提示）
     let feedbackHtml = '';
     if (isCorrect) {
+        console.log('[submitAnswer] call playSound success');
+        playSound('success');
         feedbackHtml = '<span style="color:#27ae60;font-weight:bold;"><i class="fa-solid fa-circle-check"></i> 恭喜答對！你很棒！</span>';
     } else {
-        feedbackHtml = '<span style="color:#e74c3c;font-weight:bold;"><i class="fa-solid fa-circle-xmark"></i> 答錯了！繼續加油喔！</span>';
+        console.log('[submitAnswer] call playSound error');
+        playSound('error');
+        feedbackHtml = '<span style="color:#e74c3c;font-weight:bold;"><i class="fa-solid fa-circle-xmark"></i> 答錯了</span>';
     }
     // 顯示正確答案（以 optionList 找出顯示順序的內容）
     let ansText = correctIdxArr.map(idx => {

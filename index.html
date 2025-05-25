@@ -36,14 +36,18 @@
             </select>
             <br>
             <label>答案順序：</label>
-            <label><input type="radio" name="answer-order" value="original"> 原始順序</label>
+            <label><input type="radio" name="answer-order" value="original"> 題庫順序</label>
             <label style="margin-left:12px;"><input type="radio" name="answer-order" value="shuffle" checked>
                 隨機順序
             </label>
             <br>
-            <label for="exam-duration" style="margin-top:8px;">測驗時間（分鐘）：</label>
+            <label for="exam-duration" style="margin-top:8px;">測驗時間：</label>
             <input type="number" id="exam-duration" min="1" max="999" value="60"
                 style="width:80px; margin-left:8px; margin-bottom:8px;">
+            <label for="exam-duration" style="margin-top:8px;">分鐘</label>
+            <br>
+            <label>播放音效：</label>
+            <input type="checkbox" id="enable-sound" />
             <hr>
             <div>
                 <div class="float-start me-2">
