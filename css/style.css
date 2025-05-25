@@ -24,6 +24,19 @@ label {
     font-size: 1.1em;
 }
 
+/* 選取答案時，label 文字變紅色 */
+#options-form input[type="radio"]:checked+span+label,
+#options-form input[type="checkbox"]:checked+span+label {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+#options-form label {
+    color: #222;
+    font-weight: normal;
+    transition: color 0.2s;
+}
+
 input[type="number"] {
     width: 60px;
     padding: 4px 8px;
@@ -59,6 +72,12 @@ input[type="number"] {
     margin-top: 22px;
     font-weight: bold;
     font-size: 1.2rem;
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+#feedback.show {
+    opacity: 1;
 }
 
 .hidden {
@@ -136,4 +155,34 @@ input[type="number"] {
     font-size: 1.5em;
     color: #3498db;
     font-weight: bold;
+}
+
+/* 按鈕點擊縮放動畫 */
+.btn:active {
+    transform: scale(0.95);
+    transition: transform 0.1s;
+}
+
+/* 回饋訊息淡入動畫 */
+#feedback {
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+#feedback.show {
+    opacity: 1;
+}
+
+/* 題目、圖片、選項區塊淡入動畫 */
+#question-text,
+#question-image,
+#options-form {
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+#question-text.show,
+#question-image.show,
+#options-form.show {
+    opacity: 1;
 }

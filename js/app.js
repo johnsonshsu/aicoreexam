@@ -34,7 +34,10 @@ fetch('data/questions.json')
         // 自動設定題號範圍最大值
         const rangeEndInput = document.getElementById('question-range-end');
         if (rangeEndInput) rangeEndInput.value = data.length;
-        showWeightedQuestionsList();
+        // 僅當 setup-section 顯示時才顯示 weighted-list
+        if (!setupSection.classList.contains('hidden')) {
+            showWeightedQuestionsList();
+        }
     });
 
 document.getElementById('start-btn').addEventListener('click', startQuiz);
@@ -62,25 +65,6 @@ document.getElementById('download-json-btn').addEventListener('click', function 
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-});
-document.getElementById('quit-btn').addEventListener('click', () => {
-    // 結束測驗，回到一開始畫面
-    quizSection.classList.add('hidden');
-    resultSection.classList.add('hidden');
-    setupSection.classList.remove('hidden');
-    stopTimer();
-    showWeightedQuestionsList();
-    // 重新啟用提交按鈕
-    setTimeout(() => {
-        const submitBtn = document.getElementById('submit-btn');
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            // 先移除舊事件再重新綁定，避免多重綁定
-            submitBtn.replaceWith(submitBtn.cloneNode(true));
-            const newSubmitBtn = document.getElementById('submit-btn');
-            if (newSubmitBtn) newSubmitBtn.addEventListener('click', submitAnswer);
-        }
-    }, 100);
 });
 document.getElementById('preview-json-btn').addEventListener('click', function () {
     // 取得目前記憶體中的 questions 陣列
@@ -197,6 +181,14 @@ function startQuiz() {
     const rangedQuestions = questions.slice(rangeStart - 1, rangeEnd);
     total = Math.min(count, rangedQuestions.length);
     quizQuestions = getRandomQuestions(rangedQuestions, total);
+    if (!quizQuestions || quizQuestions.length === 0) {
+        alert('⚠️ 無法產生考題，請檢查題號範圍、題數設定或題庫內容！');
+        setupSection.classList.remove('hidden');
+        quizSection.classList.add('hidden');
+        resultSection.classList.add('hidden');
+        showWeightedQuestionsList();
+        return;
+    }
     current = 0;
     score = 0;
     wrongQuestions = [];
@@ -224,41 +216,18 @@ function startQuiz() {
         timerDiv.classList.remove('hidden');
     }
     showQuestion();
-    setupJumpSelect(); // showQuestion 之後呼叫，確保 current/total 正確
 }
 
-function setupJumpSelect() {
-    const jumpSelect = document.getElementById('jump-select');
-    const jumpBtn = document.getElementById('jump-btn');
-    if (!jumpSelect || !jumpBtn) return;
-    jumpSelect.innerHTML = '';
-    if (total > 0) {
-        for (let i = 0; i < total; i++) {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = `第 ${i + 1} 題`;
-            jumpSelect.appendChild(opt);
-        }
-        jumpSelect.value = current;
-        jumpSelect.style.display = '';
-        jumpBtn.style.display = '';
-    } else {
-        jumpSelect.style.display = 'none';
-        jumpBtn.style.display = 'none';
-    }
-    // 先移除舊事件再註冊，避免重複
-    jumpBtn.onclick = null;
-    jumpBtn.onclick = function () {
-        const idx = parseInt(jumpSelect.value, 10);
-        if (!isNaN(idx) && idx >= 0 && idx < total) {
-            current = idx;
-            showQuestion();
-        }
-    };
-}
-
-// 在 showQuestion 時同步更新下拉選單選項
 function showQuestion() {
+    // 防呆：若 quizQuestions 為空或 current 超出範圍，顯示錯誤訊息
+    if (!quizQuestions || quizQuestions.length === 0 || current < 0 || current >= quizQuestions.length) {
+        questionText.textContent = '⚠️ 無法載入題目，請檢查題庫設定或題號範圍/題數選擇。';
+        questionImage.innerHTML = '';
+        optionsForm.innerHTML = '';
+        feedback.textContent = '';
+        console.error('quizQuestions 為空或 current 超出範圍', { quizQuestions, current });
+        return;
+    }
     // 強制隱藏高權重題目列表
     const weightedList = document.getElementById('weighted-list');
     if (weightedList) weightedList.style.display = 'none';
@@ -281,7 +250,16 @@ function showQuestion() {
         questionImage.innerHTML = '';
     }
     // 處理選項順序
-    let optionList = q.options ? q.options.map((opt, idx) => ({ opt, idx })) : [];
+    if (!Array.isArray(q.options) || q.options.length === 0) {
+        questionText.textContent = '⚠️ 此題目缺少選項資料，請檢查題庫格式！';
+        questionImage.innerHTML = '';
+        optionsForm.innerHTML = '';
+        feedback.textContent = '';
+        console.error('題目缺少 options 欄位或選項為空', q);
+        return;
+    }
+    let optionList = q.options.map((opt, idx) => ({ opt, idx }));
+    console.log('optionList:', optionList, 'q:', q);
     if (answerOrder === 'shuffle') {
         optionList = shuffle(optionList);
     }
@@ -313,14 +291,55 @@ function showQuestion() {
         wrapper.appendChild(label);
         optionsForm.appendChild(wrapper);
     });
-    // 動態產生提交答案按鈕
-    let submitBtn = document.createElement('button');
+    console.log('optionsForm.innerHTML:', optionsForm.innerHTML);
+    // 產生按鈕列（提交、繼續、重新開始）
+    let btnRow = document.getElementById('btn-row');
+    if (!btnRow) {
+        btnRow = document.createElement('div');
+        btnRow.id = 'btn-row';
+        btnRow.style.display = 'flex';
+        btnRow.style.justifyContent = 'space-between';
+        btnRow.style.alignItems = 'center';
+        btnRow.style.marginTop = '8px';
+        optionsForm.appendChild(btnRow); // 讓按鈕列在 <form> 內部
+    }
+    btnRow.innerHTML = '';
+    // 左側：提交/繼續
+    let leftBtnBox = document.createElement('div');
+    leftBtnBox.style.display = 'flex';
+    leftBtnBox.style.gap = '12px';
+    // 提交按鈕
+    const submitBtn = document.createElement('button');
     submitBtn.id = 'submit-btn';
     submitBtn.type = 'submit';
     submitBtn.className = 'btn btn-success';
     submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 提交答案';
-    // 不再加 onclick，交由表單 submit 處理
-    optionsForm.appendChild(submitBtn);
+    leftBtnBox.appendChild(submitBtn);
+    // 繼續下一題按鈕（預設隱藏）
+    const nextBtn = document.createElement('button');
+    nextBtn.id = 'next-btn';
+    nextBtn.type = 'button';
+    nextBtn.className = 'btn btn-primary';
+    nextBtn.style.display = 'none';
+    leftBtnBox.appendChild(nextBtn);
+    btnRow.appendChild(leftBtnBox);
+    // 右側：重新開始（只建立一次並全域綁定事件）
+    let quitBtn = document.getElementById('quit-btn');
+    if (!quitBtn) {
+        quitBtn = document.createElement('button');
+        quitBtn.id = 'quit-btn';
+        quitBtn.type = 'button';
+        quitBtn.className = 'btn btn-danger';
+        quitBtn.innerHTML = '<i class="fa-solid fa-house"></i> 重新開始';
+        quitBtn.addEventListener('click', () => {
+            quizSection.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            setupSection.classList.remove('hidden');
+            stopTimer();
+            showWeightedQuestionsList();
+        });
+    }
+    btnRow.appendChild(quitBtn);
     // 顯示詳細說明欄位（僅於有設定時）
     let explanationDiv = document.getElementById('explanation');
     if (!explanationDiv) {
@@ -336,244 +355,225 @@ function showQuestion() {
     }
     // 一律隱藏說明，避免未作答就顯示
     explanationDiv.style.display = 'none';
-    // 隱藏繼續按鈕
-    let nextBtn = document.getElementById('next-btn');
-    if (nextBtn) nextBtn.style.display = 'none';
+    // 隱藏繼續按鈕（每次換題都隱藏）
+    const nextBtnHide = document.getElementById('next-btn');
+    if (nextBtnHide) nextBtnHide.style.display = 'none';
     // 更新跳題下拉選單選中狀態，並確保顯示與內容正確
-    setupJumpSelect();
+    // setupJumpSelect();
+    // 題目動畫淡入
+    questionText.classList.remove('show');
+    questionImage.classList.remove('show');
+    optionsForm.classList.remove('show');
+    setTimeout(() => {
+        questionText.classList.add('show');
+        questionImage.classList.add('show');
+        optionsForm.classList.add('show');
+    }, 10);
+    // 換題時移除回饋動畫
+    feedback.classList.remove('show');
+    renderQuestionNumberList();
 }
 
-function submitAnswer(e) {
-    console.log('submitAnswer called'); // debug: 確認事件有無觸發
-    e.preventDefault();
-    const q = quizQuestions[current];
-    const optionList = optionListPerQuestion[current] || [];
-    let selected = [];
-    if (q.answer.length > 1) {
-        // 複選
-        optionsForm.querySelectorAll('input[type=checkbox]:checked').forEach(i => selected.push(Number(i.value)));
-    } else {
-        // 單選
-        const checked = optionsForm.querySelector('input[type=radio]:checked');
-        if (checked) selected.push(Number(checked.value));
+function renderQuestionNumberList() {
+    let container = document.getElementById('question-number-list');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'question-number-list';
+        container.style.display = 'flex';
+        container.style.flexWrap = 'wrap';
+        container.style.gap = '8px';
+        container.style.margin = '24px 0 0 0';
+        container.style.justifyContent = 'flex-start';
+        container.style.alignItems = 'center';
+        container.style.userSelect = 'none';
+        // 插入到 quiz-section 最下方
+        const quizSection = document.getElementById('quiz-section');
+        quizSection.appendChild(container);
     }
-    if (selected.length === 0) {
-        feedback.textContent = '請選擇答案';
-        return;
-    }
-    // 將 answer 轉為 0-based 以比對
-    const answerZeroBased = q.answer.map(idx => idx - 1);
-    const correct = arraysEqual(selected.sort(), answerZeroBased.slice().sort());
-    // 覆蓋 answers 紀錄
-    answers[current] = { correct, selected: selected.slice() };
-    // 重新計算分數
-    score = Object.values(answers).filter(a => a.correct).length;
-    // 更新 wrongQuestions
-    wrongQuestions = [];
-    Object.entries(answers).forEach(([idx, a]) => {
-        if (!a.correct) {
-            wrongQuestions.push({ q: quizQuestions[idx], selected: a.selected });
+    container.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+        const btn = document.createElement('span');
+        btn.textContent = i + 1;
+        btn.style.display = 'inline-block';
+        btn.style.width = '32px';
+        btn.style.height = '32px';
+        btn.style.lineHeight = '32px';
+        btn.style.textAlign = 'center';
+        btn.style.borderRadius = '6px';
+        btn.style.margin = '2px 2px';
+        btn.style.cursor = 'pointer';
+        btn.style.fontWeight = 'bold';
+        btn.style.fontSize = '1.1em';
+        if (answers[i]) {
+            btn.style.background = '#27ae60';
+            btn.style.color = '#fff';
+            btn.style.border = '1px solid #27ae60';
+        } else {
+            btn.style.background = '#fff';
+            btn.style.color = '#222';
+            btn.style.border = '1px solid #bbb';
         }
-    });
-    if (correct) {
-        feedback.textContent = '✔️ 答對了！';
-        feedback.style.color = '#27ae60';
-    } else {
-        // 反查正確答案在畫面上的選項代號（1-based）
-        const correctIdxs = answerZeroBased.map(ansIdx => {
-            for (let i = 0; i < optionList.length; i++) {
-                if (optionList[i].idx === ansIdx) return i + 1;
-            }
-            return '?';
-        });
-        feedback.textContent = '❌ 答錯了！正確答案選項：' + correctIdxs.join('、');
-        feedback.style.color = '#e74c3c';
-        wrongQuestions.push({ q, selected });
+        btn.onclick = () => {
+            current = i;
+            showQuestion();
+        };
+        container.appendChild(btn);
     }
-    // 取得提交答案按鈕
-    const submitBtn = document.getElementById('submit-btn');
-    // 建立一個容器，水平排列 feedback 與 nextBtn
-    let feedbackNextContainer = document.getElementById('feedback-next-container');
-    if (!feedbackNextContainer) {
-        feedbackNextContainer = document.createElement('span');
-        feedbackNextContainer.id = 'feedback-next-container';
-        feedbackNextContainer.style.display = 'inline-flex';
-        feedbackNextContainer.style.alignItems = 'baseline'; // baseline 對齊
-        feedbackNextContainer.style.marginLeft = '16px';
-        submitBtn.parentNode.insertBefore(feedbackNextContainer, submitBtn.nextSibling);
-    } else {
-        feedbackNextContainer.innerHTML = '';
-    }
-    // 設定 feedback 樣式
-    feedback.style.display = 'inline-block';
-    feedback.style.margin = '0 12px 0 0';
-    // 將 feedback 移到容器內
-    feedbackNextContainer.appendChild(feedback);
-    let nextBtn = document.getElementById('next-btn');
-    if (!nextBtn) {
-        nextBtn = document.createElement('button');
-        nextBtn.id = 'next-btn';
-        nextBtn.setAttribute("class", "btn btn-primary");
-        nextBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            if (current === total - 1) {
-                if (confirm('已經是最後一題，確定要交卷嗎？')) {
-                    goNextQuestion(e);
-                }
-            } else {
-                goNextQuestion(e);
-            }
-        });
-    }
-    // 根據是否為最後一題調整按鈕文字
-    if (current === total - 1) {
-        nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 答完交卷';
-    } else {
-        nextBtn.innerHTML = '<i class="fa-solid fa-forward-step"></i> 繼續下一題';
-    }
-    // 將 nextBtn 也放到 feedbackNextContainer
-    feedbackNextContainer.appendChild(nextBtn);
-    // 顯示詳細說明欄位（若有）
-    const explanationDiv = document.getElementById('explanation');
-    if (q.explanation) {
-        explanationDiv.innerHTML = '<span class="explanation-info">答題說明：</span><br />' + q.explanation.replace(/\n/g, '<br>');
-        explanationDiv.style.display = 'block';
-    } else if (explanationDiv) {
-        explanationDiv.style.display = 'none';
-    }
-    // 禁用提交按鈕避免重複作答
-    document.getElementById('submit-btn').disabled = true;
-    // optionsForm.classList.add('hidden'); // 移除這行，讓答案區塊不會隱藏
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    const jumpBtn = document.getElementById('jump-btn');
-    if (jumpBtn) {
-        jumpBtn.addEventListener('click', () => {
-            const jumpSelect = document.getElementById('jump-select');
-            if (!jumpSelect) return;
-            const idx = parseInt(jumpSelect.value, 10);
-            if (!isNaN(idx) && idx >= 0 && idx < total) {
-                current = idx;
-                showQuestion();
-            }
-        });
-    }
+    showWeightedQuestionsList(); // 頁面初始載入時顯示高權重題目
 });
 
-function goNextQuestion(e) {
-    e.preventDefault();
-    optionsForm.classList.remove('hidden'); // 新增：進入下一題時顯示答案區
-    let nextBtn = document.getElementById('next-btn');
-    if (nextBtn) nextBtn.style.display = 'none';
-    document.getElementById('submit-btn').disabled = false;
-    current++;
-    if (current < total) {
-        showQuestion();
+function showWeightedQuestionsList() {
+    const weightedList = document.getElementById('weighted-list');
+    if (!weightedList) return;
+    // 僅當 setup-section 顯示時才顯示
+    if (setupSection.classList.contains('hidden')) {
+        weightedList.style.display = 'none';
+        return;
+    }
+    // 過濾高權重題目
+    const highWeightQuestions = (questions || []).filter(q => (q.weight || 1) > 1);
+    if (highWeightQuestions.length === 0) {
+        weightedList.innerHTML = '<div style="color:#888;padding:8px 0;">目前無高權重題目</div>';
+        weightedList.style.display = '';
+        return;
+    }
+    // 依權重降冪排序
+    highWeightQuestions.sort((a, b) => (b.weight || 1) - (a.weight || 1));
+    let html = '<div style="font-weight:bold;margin-bottom:6px;">高權重題目（抽中機率較高）</div>';
+    html += '<ul style="padding-left:18px;margin-bottom:0;">';
+    highWeightQuestions.forEach(q => {
+        html += `<li style="margin-bottom:2px;">
+            <span style="color:#2980b9;font-weight:bold;">#${q.id}</span>　
+            <span>${q.question.replace(/<[^>]+>/g, '').slice(0, 28)}${q.question.length > 28 ? '…' : ''}</span>
+            <span style="color:#e67e22;font-size:0.95em;">（權重${q.weight}）</span>
+        </li>`;
+    });
+    html += '</ul>';
+    weightedList.innerHTML = html;
+    weightedList.style.display = '';
+}
+
+// Fisher-Yates 洗牌演算法
+function shuffle(array) {
+    let m = array.length, t, i;
+    while (m) {
+        i = Math.floor(Math.random() * m--);
+        t = array[m];
+        array[m] = array[i];
+        array[i] = t;
+    }
+    return array;
+}
+
+// =====================
+// submitAnswer: 處理答題與解析顯示，禁止自動回首頁/自動換題
+function submitAnswer(e) {
+    console.log('submitAnswer called', e);
+    if (e) e.preventDefault();
+    const q = quizQuestions[current];
+    if (!q) return;
+    // 取得本題的 optionList（顯示順序）
+    const optionList = optionListPerQuestion[current] || q.options.map((opt, idx) => ({ opt, idx }));
+    // 取得使用者選擇（原始 idx 陣列）
+    let selected = [];
+    const inputs = optionsForm.querySelectorAll('input[name="option"]');
+    inputs.forEach(input => {
+        if (input.checked) selected.push(Number(input.value)); // value = 原始 idx
+    });
+    // 單選強制只取一個
+    if (q.answer.length === 1 && selected.length > 1) selected = [selected[0]];
+    if (selected.length === 0) {
+        feedback.innerHTML = '<span style="color:#e74c3c;font-weight:bold;">請先選擇答案！</span>';
+        feedback.classList.add('show');
+        return;
+    }
+    // 正確答案（原始 idx 陣列，1-based 轉 0-based）
+    const correctIdxArr = q.answer.map(a => a - 1).sort((a, b) => a - b);
+    const userIdxArr = selected.slice().sort((a, b) => a - b);
+    // 判斷正確
+    let isCorrect = userIdxArr.length === correctIdxArr.length && userIdxArr.every((v, i) => v === correctIdxArr[i]);
+    answers[current] = { userAns: userIdxArr.map(i => i + 1), isCorrect };
+    if (!isCorrect) wrongQuestions.push({ ...q, userAns: userIdxArr.map(i => i + 1) });
+    if (isCorrect) score++;
+    // 顯示正確/錯誤（客製化提示）
+    let feedbackHtml = '';
+    if (isCorrect) {
+        feedbackHtml = '<span style="color:#27ae60;font-weight:bold;"><i class="fa-solid fa-circle-check"></i> 恭喜答對！你很棒！</span>';
     } else {
-        console.log('goNextQuestion: call showResult, current:', current, 'total:', total);
-        showResult();
+        feedbackHtml = '<span style="color:#e74c3c;font-weight:bold;"><i class="fa-solid fa-circle-xmark"></i> 答錯了！繼續加油喔！</span>';
+    }
+    // 顯示正確答案（以 optionList 找出顯示順序的內容）
+    let ansText = correctIdxArr.map(idx => {
+        const optObj = optionList.find(o => o.idx === idx);
+        return optObj ? optObj.opt : (q.options[idx] || '');
+    }).join('、');
+    feedbackHtml += `<div style='margin-top:8px;'><b>正確答案：</b><span style='color:#2980b9;'>${ansText}</span></div>`;
+    // 只有答錯時才顯示你的答案
+    if (!isCorrect) {
+        let userText = userIdxArr.map(idx => {
+            const optObj = optionList.find(o => o.idx === idx);
+            return optObj ? optObj.opt : (q.options[idx] || '');
+        }).join('、');
+        feedbackHtml += `<div><b>你的答案：</b>${userText || '<span style=\'color:#888\'>未作答</span>'}</div>`;
+    }
+    // 顯示詳細解析
+    if (q.explanation) {
+        let explanationDiv = document.getElementById('explanation');
+        if (explanationDiv) {
+            explanationDiv.innerHTML = `<b>解析：</b><br>${q.explanation.replace(/\n/g, '<br>')}`;
+            explanationDiv.style.display = '';
+        }
+    }
+    feedback.innerHTML = feedbackHtml;
+    feedback.classList.add('show');
+    // 禁用所有選項
+    inputs.forEach(input => input.disabled = true);
+    // 切換按鈕顯示狀態
+    const submitBtn = document.getElementById('submit-btn');
+    if (submitBtn) submitBtn.style.display = 'none';
+    const nextBtn = document.getElementById('next-btn');
+    if (nextBtn) {
+        nextBtn.style.display = '';
+        nextBtn.innerHTML = current < total - 1 ? '<i class="fa-solid fa-arrow-right"></i> 繼續下一題' : '<i class="fa-solid fa-flag-checkered"></i> 查看結果';
+        nextBtn.onclick = function () {
+            nextBtn.style.display = 'none';
+            if (current >= total - 1) {
+                showResult();
+            } else {
+                current++;
+                showQuestion();
+            }
+        };
     }
 }
 
 function showResult() {
-    console.log('showResult: start');
-    // 強制隱藏高權重題目列表
-    const weightedList = document.getElementById('weighted-list');
-    if (weightedList) weightedList.style.display = 'none';
+    stopTimer();
     quizSection.classList.add('hidden');
     resultSection.classList.remove('hidden');
+    setupSection.classList.add('hidden');
+    // 分數與正確率
     const percent = total > 0 ? Math.round((score / total) * 100) : 0;
-    stopTimer();
-    // 正確計算總作答時間
-    let usedSeconds = 0;
-    if (typeof startTime === 'number' && startTime > 0) {
-        usedSeconds = Math.floor((Date.now() - startTime) / 1000);
-    }
-    const min = String(Math.floor(usedSeconds / 60)).padStart(2, '0');
-    const sec = String(usedSeconds % 60).padStart(2, '0');
-    const usedTimeStr = `${min}:${sec}`;
-    // 先顯示分數、正確率、圖表
-    let html = `您的分數：${score} / ${total}　正確率：${percent}%<br>總作答時間：${usedTimeStr}`;
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const min = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const sec = String(elapsed % 60).padStart(2, '0');
+    let html = `<div style="font-size:1.3em;font-weight:bold;">分數：<span style='color:#27ae60;'>${score} / ${total}</span></div>`;
+    html += `<div style="font-size:1.1em;">正確率：<span style='color:#2980b9;'>${percent}%</span></div>`;
+    html += `<div style="font-size:1.1em;">總用時：<span style='color:#e67e22;'>${min}:${sec}</span></div>`;
     scoreDiv.innerHTML = html;
-    // 確保 canvas 存在且清空內容
-    const chartCanvas = document.getElementById('accuracyChart');
-    if (chartCanvas) {
-        chartCanvas.width = 200;
-        chartCanvas.height = 200;
-        const ctx = chartCanvas.getContext('2d');
-        ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
-    }
-    // 畫正確率圖
-    setTimeout(() => {
-        if (document.getElementById('accuracyChart')) {
-            drawAccuracyChart(percent);
-        }
-    }, 0);
-    // 移動 [再考一次] 按鈕到錯題區塊上方
-    const resultSectionDiv = document.getElementById('result-section');
-    const restartBtn = document.getElementById('restart-btn');
-    let wrongBlock = document.getElementById('wrong-list-block');
-    if (!wrongBlock) {
-        wrongBlock = document.createElement('div');
-        wrongBlock.id = 'wrong-list-block';
-    }
-    // 生成錯題內容
-    let wrongHtml = '';
-    if (wrongQuestions.length > 0) {
-        wrongHtml += '您答錯的題目：</b><ol style="margin-top:6px; color:#e74c3c;">';
-        wrongQuestions.forEach(item => {
-            const q = item.q;
-            let userAns = item.selected.map(idx => q.options[idx] || '').join('、');
-            if (!userAns) userAns = '<span style="color:#aaa">未作答</span>';
-            const correctAns = (q.answer.map(idx => q.options[idx - 1] || '').join('、'));
-            wrongHtml += `<li style='margin-bottom:12px;'>
-                <div>${q.question}</div>
-                <div style='font-size:0.98em;margin-top:2px;'>
-                  <span style='color:#888'>您的答案：</span><span style='color:#222'>${userAns}</span><br>
-                  <span style='color:#888'>正確答案：</span><span style='color:#222'>${correctAns}</span>
-                </div>
-            </li>`;
-        });
-        wrongHtml += '</ol>';
-    }
-    wrongBlock.innerHTML = wrongHtml;
-    // 先移動 [再考一次] 按鈕到 canvas 下方、錯題區塊上方
-    const canvasDiv = chartCanvas ? chartCanvas.parentNode : null;
-    if (restartBtn && canvasDiv) {
-        // 先移除再插入，避免重複
-        resultSectionDiv.removeChild(restartBtn);
-        if (canvasDiv.nextSibling) {
-            resultSectionDiv.insertBefore(restartBtn, canvasDiv.nextSibling);
-        } else {
-            resultSectionDiv.appendChild(restartBtn);
-        }
-    }
-    // 錯題區塊永遠在最下方
-    if (wrongBlock.parentNode !== resultSectionDiv) {
-        resultSectionDiv.appendChild(wrongBlock);
-    } else {
-        resultSectionDiv.appendChild(wrongBlock); // 保證順序
-    }
-    console.log('showResult: end, resultSection.hidden:', resultSection.classList.contains('hidden'));
-}
-
-// 新增正確率圖形函式
-let accuracyChartInstance = null;
-
-function drawAccuracyChart(percent) {
+    // 畫圓形正確率圖
     const ctx = document.getElementById('accuracyChart').getContext('2d');
-    // 若已存在 Chart 實例，先銷毀
-    if (accuracyChartInstance) {
-        accuracyChartInstance.destroy();
-    }
-    accuracyChartInstance = new Chart(ctx, {
+    if (window.resultChart) window.resultChart.destroy();
+    window.resultChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['正確', '錯誤'],
             datasets: [{
-                data: [percent, 100 - percent],
-                backgroundColor: ['#4caf50', '#eee'],
+                data: [score, total - score],
+                backgroundColor: ['#27ae60', '#e74c3c'],
                 borderWidth: 2
             }]
         },
@@ -582,58 +582,39 @@ function drawAccuracyChart(percent) {
             plugins: {
                 legend: { display: false },
                 tooltip: { enabled: false },
-                title: {
-                    display: true,
-                    text: percent + '%',
-                    color: '#333',
-                    font: { size: 28 }
-                }
+                title: { display: false }
             }
         }
     });
-}
-
-// 強化 showWeightedQuestionsList()，每次呼叫都自動顯示 weighted-list
-function showWeightedQuestionsList() {
-    const weightedList = document.getElementById('weighted-list');
-    if (!weightedList) return;
-    // 只在 setup-section 顯示
-    if (setupSection.classList.contains('hidden')) {
-        weightedList.style.display = 'none';
-        return;
+    // 錯題複習區塊（最下方）
+    let wrongHtml = '';
+    if (wrongQuestions.length > 0) {
+        wrongHtml += `<div style='margin:32px 0 0 0;'><h5 style='color:#e74c3c;font-weight:bold;'>錯題複習</h5>`;
+        wrongQuestions.forEach((q, idx) => {
+            // 顯示題目、你的答案、正確答案、解析
+            let userAns = (q.userAns || []).map(a => q.options[a - 1]).join('、');
+            let correctAns = (q.answer || []).map(a => q.options[a - 1]).join('、');
+            wrongHtml += `<div style='border:1px solid #ffe0e0;background:#fff8f8;border-radius:8px;padding:14px 16px;margin-bottom:18px;'>`;
+            wrongHtml += `<div style='color:#b71c1c;font-weight:bold;'>${idx + 1}. ${q.question}</div>`;
+            if (q.image) {
+                wrongHtml += `<div style='margin:8px 0;'><img src='${q.image}' alt='題目圖片' style='max-width:100%;max-height:120px;'></div>`;
+            }
+            wrongHtml += `<div><b>你的答案：</b><span style='color:#e67e22;'>${userAns || '未作答'}</span></div>`;
+            wrongHtml += `<div><b>正確答案：</b><span style='color:#2980b9;'>${correctAns}</span></div>`;
+            if (q.explanation) {
+                wrongHtml += `<div style='margin-top:6px;'><b>解析：</b><span style='color:#555;'>${q.explanation.replace(/\n/g, '<br>')}</span></div>`;
+            }
+            wrongHtml += `</div>`;
+        });
+        wrongHtml += `</div>`;
+    } else {
+        wrongHtml += `<div style='margin:32px 0 0 0;color:#27ae60;font-weight:bold;'>恭喜全部答對，沒有錯題！</div>`;
     }
-    // 過濾權重>1
-    const highWeight = questions.filter(q => (q.weight || 1) > 1);
-    if (highWeight.length === 0) {
-        weightedList.innerHTML = '';
-        weightedList.style.display = 'none';
-        return;
-    }
-    // 依權重排序
-    highWeight.sort((a, b) => (b.weight || 1) - (a.weight || 1));
-    let html = '<b>高權重題目列表（僅出題前顯示）：</b><ul style="margin-top:8px;">';
-    highWeight.forEach(q => {
-        html += `<li>第${q.id}題（權重${q.weight}）：${q.question.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</li>`;
-    });
-    html += '</ul>';
-    weightedList.innerHTML = html;
-    weightedList.style.display = '';
-}
-
-// 陣列內容完全相等判斷
-function arraysEqual(a, b) {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) return false;
-    }
-    return true;
-}
-
-// Fisher-Yates 洗牌演算法
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+    // 插入到 resultSection 最下方
+    let oldReview = document.getElementById('wrong-review');
+    if (oldReview) oldReview.remove();
+    const reviewDiv = document.createElement('div');
+    reviewDiv.id = 'wrong-review';
+    reviewDiv.innerHTML = wrongHtml;
+    resultSection.appendChild(reviewDiv);
 }

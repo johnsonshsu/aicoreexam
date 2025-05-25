@@ -21,6 +21,9 @@
             <br><label for="question-count">考題數量：</label>
             <select id="question-count">
                 <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="20">20</option>
@@ -73,6 +76,7 @@
                     </div>
                 </div>
             </div>
+            <div id="weighted-list"></div>
         </div>
         <div id="quiz-section" class="hidden">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -87,27 +91,11 @@
             <form id="options-form">
                 <!-- 選項動態產生於此 -->
             </form>
+            <!-- btn-row 由 js 動態產生，這裡不再有靜態 quit-btn 區塊 -->
             <hr />
-            <div>
-                <!-- 其餘按鈕維持原位 -->
-                <div class="float-end me-2">
-                    <button id="quit-btn" type="button" class="btn btn-danger"><i class="fa-solid fa-house"></i>
-                        重新開始</button>
-                </div>
-                <div class="float-end me-2">
-                    <button id="jump-btn" type="button" class="btn btn-primary"><i class="fa-solid fa-arrow-right"></i>
-                        跳到此題</button>
-                </div>
-                <div class="float-end me-2">
-                    <select id="jump-select" style="margin-left:24px;display:none;"></select>
-                </div>
-            </div>
-            <br>
             <div id="feedback"></div>
         </div>
         <div id="result-section" class="hidden">
-            <h3>考試結束</h3>
-            <hr />
             <div id="score"></div>
             <div style="width:200px;margin:18px auto 0 auto;">
                 <canvas id="accuracyChart" width="200" height="200"></canvas>
@@ -115,7 +103,6 @@
             <hr />
             <button id="restart-btn" class="btn btn-primary"><i class="fa-solid fa-rotate"></i> 再考一次</button>
         </div>
-        <div id="weighted-list"></div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/all.min.js"></script>
