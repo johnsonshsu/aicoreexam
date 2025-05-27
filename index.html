@@ -106,6 +106,14 @@
                 <!-- 選項動態產生於此 -->
             </form>
             <!-- btn-row 由 js 動態產生，這裡不再有靜態 quit-btn 區塊 -->
+            <div id="btn-row" class="mt-3" style="display:none;">
+                <button id="submit-btn" class="btn btn-danger me-2">
+                    <i class="fa-solid fa-paper-plane"></i> 立即交卷
+                </button>
+                <button id="restart-btn" class="btn btn-primary">
+                    <i class="fa-solid fa-rotate"></i> 再考一次
+                </button>
+            </div>
             <hr />
             <div id="feedback"></div>
         </div>
@@ -115,7 +123,7 @@
                 <canvas id="accuracyChart" width="200" height="200"></canvas>
             </div>
             <hr />
-            <button id="restart-btn" class="btn btn-primary"><i class="fa-solid fa-rotate"></i> 再考一次</button>
+            <button id="restart-btn-result" class="btn btn-primary"><i class="fa-solid fa-rotate"></i> 再考一次</button>
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>

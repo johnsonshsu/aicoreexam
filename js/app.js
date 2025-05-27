@@ -82,10 +82,31 @@ document.addEventListener('submit', function (e) {
     }
 });
 document.getElementById('restart-btn').addEventListener('click', () => {
+    resetQuizState();
     resultSection.classList.add('hidden');
+    quizSection.classList.add('hidden');
     setupSection.classList.remove('hidden');
-    showWeightedQuestionsList(); // 確保回首頁時權重列表顯示
+    showWeightedQuestionsList();
+    // 新增：自動 focus 開始按鈕與滾動到頂部
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) startBtn.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 });
+
+// 新增：結果頁面的「再考一次」按鈕事件處理
+document.getElementById('restart-btn-result').addEventListener('click', () => {
+    console.log('[restart-btn-result] clicked');
+    resetQuizState();
+    resultSection.classList.add('hidden');
+    quizSection.classList.add('hidden');
+    setupSection.classList.remove('hidden');
+    showWeightedQuestionsList();
+    // 自動 focus 開始按鈕與滾動到頂部
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) startBtn.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
 document.getElementById('download-json-btn').addEventListener('click', function () {
     // 取得目前記憶體中的 questions 陣列
     const dataStr = JSON.stringify(questions, null, 4);
@@ -332,21 +353,21 @@ function showQuestion() {
         optionsForm.appendChild(wrapper);
     });
     console.log('optionsForm.innerHTML:', optionsForm.innerHTML);
+    // 移除舊的 <hr> 和 btn-row，避免重複
+    Array.from(optionsForm.querySelectorAll('hr')).forEach(hr => hr.remove());
+    const oldBtnRow = document.getElementById('btn-row');
+    if (oldBtnRow) oldBtnRow.remove();
     // 產生直線
     const hr = document.createElement('hr');
     optionsForm.appendChild(hr);
-    // 產生按鈕列（提交、繼續、重新開始）
-    let btnRow = document.getElementById('btn-row');
-    if (!btnRow) {
-        btnRow = document.createElement('div');
-        btnRow.id = 'btn-row';
-        btnRow.style.display = 'flex';
-        btnRow.style.justifyContent = 'space-between';
-        btnRow.style.alignItems = 'center';
-        btnRow.style.marginTop = '8px';
-        optionsForm.appendChild(btnRow); // 讓按鈕列在 <form> 內部
-    }
-    btnRow.innerHTML = '';
+    // 產生按鈕列（提交、繼續、立即交卷、重新開始）
+    let btnRow = document.createElement('div');
+    btnRow.id = 'btn-row';
+    btnRow.style.display = 'flex';
+    btnRow.style.justifyContent = 'space-between';
+    btnRow.style.alignItems = 'center';
+    btnRow.style.marginTop = '8px';
+    optionsForm.appendChild(btnRow); // 讓按鈕列在 <form> 內部
     // 左側：提交/繼續
     let leftBtnBox = document.createElement('div');
     leftBtnBox.style.display = 'flex';
@@ -366,23 +387,49 @@ function showQuestion() {
     nextBtn.style.display = 'none';
     leftBtnBox.appendChild(nextBtn);
     btnRow.appendChild(leftBtnBox);
-    // 右側：重新開始（只建立一次並全域綁定事件）
-    let quitBtn = document.getElementById('quit-btn');
-    if (!quitBtn) {
-        quitBtn = document.createElement('button');
-        quitBtn.id = 'quit-btn';
-        quitBtn.type = 'button';
-        quitBtn.className = 'btn btn-danger';
-        quitBtn.innerHTML = '<i class="fa-solid fa-house"></i> 重新開始';
-        quitBtn.addEventListener('click', () => {
-            quizSection.classList.add('hidden');
-            resultSection.classList.add('hidden');
-            setupSection.classList.remove('hidden');
-            stopTimer();
-            showWeightedQuestionsList();
-        });
-    }
-    btnRow.appendChild(quitBtn);
+    // 右側：立即交卷 + 重新開始
+    let rightBtnBox = document.createElement('div');
+    rightBtnBox.style.display = 'flex';
+    rightBtnBox.style.gap = '12px';    // 立即交卷按鈕
+    let submitAllBtn = document.createElement('button');
+    submitAllBtn.id = 'submit-all-btn';
+    submitAllBtn.type = 'button';
+    submitAllBtn.className = 'btn btn-warning';
+    submitAllBtn.innerHTML = '<i class="fa-solid fa-flag"></i> 立即交卷'; submitAllBtn.onclick = function () {
+        // 先清空錯題陣列，重新根據當前答案狀態計算
+        wrongQuestions = [];
+
+        // 將未作答的題目標記為未作答，重新計算所有錯題
+        for (let i = 0; i < total; i++) {
+            if (!answers[i]) {
+                const q = quizQuestions[i];
+                answers[i] = { userAns: [], isCorrect: false };
+                wrongQuestions.push({ ...q, userAns: [] });
+            } else if (answers[i] && !answers[i].isCorrect) {
+                // 已作答但錯誤的題目，確保加入 wrongQuestions
+                const q = quizQuestions[i];
+                wrongQuestions.push({ ...q, userAns: answers[i].userAns });
+            }
+        }
+        // 顯示測驗結果
+        showResult();
+    };
+    rightBtnBox.appendChild(submitAllBtn);
+    // 重新開始按鈕
+    let quitBtn = document.createElement('button');
+    quitBtn.id = 'quit-btn';
+    quitBtn.type = 'button';
+    quitBtn.className = 'btn btn-danger';
+    quitBtn.innerHTML = '<i class="fa-solid fa-house"></i> 重新開始';
+    quitBtn.addEventListener('click', () => {
+        quizSection.classList.add('hidden');
+        resultSection.classList.add('hidden');
+        setupSection.classList.remove('hidden');
+        stopTimer();
+        showWeightedQuestionsList();
+    });
+    rightBtnBox.appendChild(quitBtn);
+    btnRow.appendChild(rightBtnBox);
     // 顯示詳細說明欄位（僅於有設定時）
     let explanationDiv = document.getElementById('explanation');
     if (!explanationDiv) {
@@ -535,12 +582,31 @@ function submitAnswer(e) {
     }
     // 正確答案（原始 idx 陣列，1-based 轉 0-based）
     const correctIdxArr = q.answer.map(a => a - 1).sort((a, b) => a - b);
-    const userIdxArr = selected.slice().sort((a, b) => a - b);
-    // 判斷正確
+    const userIdxArr = selected.slice().sort((a, b) => a - b);    // 判斷正確
     let isCorrect = userIdxArr.length === correctIdxArr.length && userIdxArr.every((v, i) => v === correctIdxArr[i]);
+
+    // 檢查之前是否已經有答案，如果已經答對過，不要重複計分
+    const previouslyAnswered = answers[current] !== undefined;
+    const previouslyCorrect = previouslyAnswered && answers[current].isCorrect;
+
+    // 更新答案狀態
     answers[current] = { userAns: userIdxArr.map(i => i + 1), isCorrect };
-    if (!isCorrect) wrongQuestions.push({ ...q, userAns: userIdxArr.map(i => i + 1) });
-    if (isCorrect) score++;
+
+    // 只有在這題之前沒有答對過，現在答對了，才增加分數
+    if (isCorrect && !previouslyCorrect) {
+        score++;
+    }
+    // 如果之前答對了但現在答錯了，需要扣分
+    else if (previouslyCorrect && !isCorrect) {
+        score--;
+    }
+
+    // 更新錯題列表，先移除本題之前的記錄（如果有）
+    wrongQuestions = wrongQuestions.filter(wq => wq.id !== q.id);
+    // 如果答錯了，添加到錯題列表
+    if (!isCorrect) {
+        wrongQuestions.push({ ...q, userAns: userIdxArr.map(i => i + 1) });
+    }
     // 顯示正確/錯誤（客製化提示）
     let feedbackHtml = '';
     if (isCorrect) {
@@ -580,20 +646,24 @@ function submitAnswer(e) {
     inputs.forEach(input => input.disabled = true);
     // 切換按鈕顯示狀態
     const submitBtn = document.getElementById('submit-btn');
-    if (submitBtn) submitBtn.style.display = 'none';
-    const nextBtn = document.getElementById('next-btn');
+    if (submitBtn) submitBtn.style.display = 'none'; const nextBtn = document.getElementById('next-btn');
     if (nextBtn) {
         nextBtn.style.display = '';
-        nextBtn.innerHTML = current < total - 1 ? '<i class="fa-solid fa-arrow-right"></i> 繼續下一題' : '<i class="fa-solid fa-flag-checkered"></i> 查看結果';
-        nextBtn.onclick = function () {
-            nextBtn.style.display = 'none';
-            if (current >= total - 1) {
-                showResult();
-            } else {
-                current++;
-                showQuestion();
-            }
-        };
+        nextBtn.innerHTML = current < total - 1 ?
+            '<i class="fa-solid fa-arrow-right"></i> 繼續下一題' :
+            '<i class="fa-solid fa-rotate-left"></i> 回到第一題'; nextBtn.onclick = function () {
+                nextBtn.style.display = 'none';
+                if (current >= total - 1) {
+                    // 回到第一題繼續答題，而不是結束測驗
+                    current = 0;
+                    // 清空 wrongQuestions 陣列，避免重複計算錯題
+                    wrongQuestions = [];
+                    showQuestion();
+                } else {
+                    current++;
+                    showQuestion();
+                }
+            };
     }
 }
 
@@ -602,6 +672,17 @@ function showResult() {
     quizSection.classList.add('hidden');
     resultSection.classList.remove('hidden');
     setupSection.classList.add('hidden');
+
+    // 重新計算分數，確保不超過總題數
+    let correctCount = 0;
+    for (let i = 0; i < total; i++) {
+        if (answers[i] && answers[i].isCorrect) {
+            correctCount++;
+        }
+    }
+    // 確保分數不會超過總題數
+    score = Math.min(correctCount, total);
+
     // 分數與正確率
     const percent = total > 0 ? Math.round((score / total) * 100) : 0;
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -664,4 +745,41 @@ function showResult() {
     reviewDiv.id = 'wrong-review';
     reviewDiv.innerHTML = wrongHtml;
     resultSection.appendChild(reviewDiv);
+}
+
+// 新增：重設 quiz 狀態的函式
+function resetQuizState() {
+    quizQuestions = [];
+    current = 0;
+    score = 0;
+    total = 0;
+    wrongQuestions = [];
+    answers = {};
+    optionListPerQuestion = {};
+    stopTimer();
+    // 銷毀分數圖表
+    if (window.resultChart) {
+        window.resultChart.destroy();
+        window.resultChart = null;
+    }
+    // 移除錯題詳解區塊
+    let oldReview = document.getElementById('wrong-review');
+    if (oldReview) oldReview.remove();
+    // 重設 timer 顯示
+    const timerDiv = document.getElementById('timer');
+    if (timerDiv) {
+        timerDiv.innerHTML = '';
+        timerDiv.classList.add('hidden');
+    }
+    // 確保開始測驗按鈕可點擊
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.classList.remove('disabled');
+        console.log('[resetQuizState] start-btn enabled', startBtn);
+    }
+    // 強制切換回首頁，避免 UI 被其他流程覆蓋
+    setupSection.classList.remove('hidden');
+    quizSection.classList.add('hidden');
+    resultSection.classList.add('hidden');
 }
