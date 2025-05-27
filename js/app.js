@@ -325,6 +325,9 @@ function showQuestion() {
         optionsForm.appendChild(wrapper);
     });
     console.log('optionsForm.innerHTML:', optionsForm.innerHTML);
+    // 產生直線
+    const hr = document.createElement('hr');
+    optionsForm.appendChild(hr);
     // 產生按鈕列（提交、繼續、重新開始）
     let btnRow = document.getElementById('btn-row');
     if (!btnRow) {
