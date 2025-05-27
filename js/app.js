@@ -311,6 +311,13 @@ function showQuestion() {
         input.value = item.idx; // value 設為原始 index
         input.id = id;
         input.style.marginRight = '8px';
+        // 自動勾選已作答答案
+        if (answers[current] && Array.isArray(answers[current].userAns)) {
+            // userAns 為 1-based，input.value 為 0-based idx
+            if (answers[current].userAns.includes(item.idx + 1)) {
+                input.checked = true;
+            }
+        }
         // 新增：選項前加上數字
         const numberSpan = document.createElement('span');
         numberSpan.textContent = (i + 1) + '. ';
